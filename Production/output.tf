@@ -5,9 +5,18 @@ output "public_ip_address" {
 
 output "username" {
   value = var.admin_username
+  sensitive = true
 }
 
 output "password" {
-  value = var.admin_password
+  value = module.vm.Admin_Password
+  sensitive = true
 }
+
+output "DATABASE_PASSWORD" {
+  value = var.admin_username
+  sensitive = true
+}
+
+
 

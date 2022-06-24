@@ -1,19 +1,20 @@
-
-# Create Resource Group
+################################################
+#           Create Resource Group              #
+################################################
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
 }
 
-# Create a virtual network
+################################################
+#              Virtual Networking              #
+################################################
 resource "azurerm_virtual_network" "vnet" {
   name                = "Virtual_Network"
   address_space       = [var.vnet-cidr]
   location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
 }
-
-
 
 # Create 2 subnet :Public and Private
 resource "azurerm_subnet" "Public_subnet" {
@@ -44,6 +45,10 @@ resource "azurerm_subnet" "Private_Subnet" {
 
 }
 
+################################################
+#              Public ip's                     #
+################################################
+
 # Create public IP
 resource "azurerm_public_ip" "publicip" {
   name                = "Public_Ip"
@@ -53,34 +58,16 @@ resource "azurerm_public_ip" "publicip" {
 
 }
 
-
-/*
-# Application VM Public IP num1
-resource "azurerm_public_ip" "AppVmPublicIP1" {
-  name                = "PublicIp1"
-  location            = var.location
+resource "azurerm_public_ip" "Ansible_Public_ip" {
+  name                = "API"
+  location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Dynamic"
 }
 
-# Application VM Public IP num2
-resource "azurerm_public_ip" "AppVmPublicIP2" {
-  name                = "PublicIp2"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"
-}
-
-# Application VM Public IP num3
-resource "azurerm_public_ip" "AppVmPublicIP3" {
-  name                = "PublicIp3"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"
-}
-*/
-
-
+################################################
+#              Network interfaces              #
+################################################
 
 # Create network interface for vm1
 resource "azurerm_network_interface" "nic" {
@@ -96,9 +83,6 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
-
-
-
 # Create network interface for vm2
 resource "azurerm_network_interface" "nic2" {
   name                = "myNIC2"
@@ -113,8 +97,6 @@ resource "azurerm_network_interface" "nic2" {
 
   }
 }
-
-
 # Create network interface for vm3
 resource "azurerm_network_interface" "nic3" {
   name                = "myNIC3"
@@ -132,7 +114,9 @@ resource "azurerm_network_interface" "nic3" {
 
 
 
-
+################################################
+#         Network security group + rule        #
+################################################
 
 # Create Network Security Group and rule
 resource "azurerm_network_security_group" "nsg" {
@@ -150,7 +134,7 @@ resource "azurerm_network_security_group" "nsg" {
     source_port_range          = "*"
     destination_port_range     = "22"
     source_address_prefix      = var.my_ip
-    destination_address_prefix = "*"
+    destination_address_prefix = "10.0.1.0/24"
   }
   security_rule {
     name                       = "Port_8080"
@@ -163,6 +147,7 @@ resource "azurerm_network_security_group" "nsg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+   
 
 }
 
@@ -180,7 +165,7 @@ resource "azurerm_network_security_group" "Private-nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
-    source_address_prefix      = "*"
+    source_address_prefix      = "10.0.1.0/24"
     destination_address_prefix = "*"
   }
   security_rule {
@@ -191,12 +176,28 @@ resource "azurerm_network_security_group" "Private-nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "5432"
+    source_address_prefix      = "10.0.1.0/24"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "DenyAll"
+    priority                   = 320
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
 
 }
 
+
+################################################
+#              NSG associate to subnet         #
+################################################
 
 #Associate subnet to subnet_network_security_group
 resource "azurerm_subnet_network_security_group_association" "public" {
@@ -209,6 +210,9 @@ resource "azurerm_subnet_network_security_group_association" "private" {
   network_security_group_id = azurerm_network_security_group.Private-nsg.id
 }
 
+######################################################################################
+#              Network interface association to network security group              #
+######################################################################################
 
 
 #Associate network interface1 to subnet_network_security_group
@@ -231,8 +235,13 @@ resource "azurerm_network_interface_security_group_association" "nsg_nic3" {
 }
 
 
+
+#####################################################
+#    Using module to create vm & availability set   #
+#####################################################
+
 module "vm" {
-  source                = "./modules"
+  source                = "./modules/av+vm"
   location              = var.location
   resource_group_name   = azurerm_resource_group.rg.name
   network_interface_ids = [azurerm_network_interface.nic.id, azurerm_network_interface.nic2.id, azurerm_network_interface.nic3.id]
@@ -242,7 +251,9 @@ module "vm" {
 }
 
 
-
+#####################################################
+#             LOAD BALANCER & RULE & association    #
+#####################################################
 #Create Load Balancer
 resource "azurerm_lb" "publicLB" {
   name                = "Public_LoadBalancer"
@@ -254,13 +265,11 @@ resource "azurerm_lb" "publicLB" {
     public_ip_address_id = azurerm_public_ip.publicip.id
   }
 }
-
 #Create backend address pool for the lb
 resource "azurerm_lb_backend_address_pool" "backend_address_pool_public" {
   loadbalancer_id = azurerm_lb.publicLB.id
   name            = "BackEndAddressPool"
 }
-
 
 #Associate network interface1 to the lb backend address pool
 resource "azurerm_network_interface_backend_address_pool_association" "nic_back_association" {
@@ -281,10 +290,6 @@ resource "azurerm_network_interface_backend_address_pool_association" "nic3_back
   backend_address_pool_id = azurerm_lb_backend_address_pool.backend_address_pool_public.id
 }
 
-
-
-
-
 #Create lb probe for port 8080
 resource "azurerm_lb_probe" "lb_probe" {
   name                = "tcpProbe"
@@ -297,8 +302,6 @@ resource "azurerm_lb_probe" "lb_probe" {
   request_path        = "/"
 
 }
-
-
 
 #Create lb rule for port 8080
 resource "azurerm_lb_rule" "LB_rule" {
@@ -330,12 +333,6 @@ resource "azurerm_network_interface_nat_rule_association" "nat_rule_association"
   ip_configuration_name  = azurerm_network_interface.nic.ip_configuration[0].name
   nat_rule_id           = azurerm_lb_nat_rule.nat_rule.id
 }
-
-
-
-
-
-
 
 
 #Get data from vnet
@@ -412,21 +409,10 @@ resource "azurerm_network_interface" "Ansible_nic" {
     public_ip_address_id          = azurerm_public_ip.Ansible_Public_ip.id
   }
 }
-resource "azurerm_public_ip" "Ansible_Public_ip" {
-  name                = "API"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"
-}
+
 
 resource "azurerm_network_interface_security_group_association" "ANS_NSG" {
   network_interface_id      = azurerm_network_interface.Ansible_nic.id
   network_security_group_id = azurerm_network_security_group.nsg.id
 }
-
-
-
-
-
-
 

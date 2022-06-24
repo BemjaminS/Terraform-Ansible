@@ -1,9 +1,7 @@
 variable "location" {
   description = "Region to build into"
   default     = "australia east"
-
 }
-
 
 variable "resource_group_name" {
   type        = string
@@ -30,5 +28,5 @@ variable "admin_username" {
 
 variable "admin_password" {
   type        = string
-  description = "Password must meet Azure complexity requirements"
+  description = "Password input for DATABASE / VIRTUAL_MACHINE"
 }

@@ -1,4 +1,8 @@
 
+####################################################
+#      Postgres server  & configuration             #
+####################################################
+
 resource "azurerm_postgresql_flexible_server" "postgres" {
   name                   = var.postgres_user_name
   resource_group_name    = azurerm_resource_group.rg.name
@@ -42,4 +46,11 @@ resource "azurerm_private_dns_zone_virtual_network_link" "default" {
   private_dns_zone_name = azurerm_private_dns_zone.default.name
   virtual_network_id    = azurerm_virtual_network.vnet.id
   resource_group_name   = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_postgresql_flexible_server_database" "default" {
+  name      = "APFSD-db"
+  server_id = azurerm_postgresql_flexible_server.postgres.id
+  collation = "en_US.UTF8"
+  charset   = "UTF8"
 }

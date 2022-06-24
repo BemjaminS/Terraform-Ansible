@@ -1,7 +1,6 @@
 variable "location" {
   description = "Region to build into"
   default     = "australia east"
-
 }
 
 
@@ -57,10 +56,10 @@ variable "admin_username" {
 
 variable "admin_password" {
   type        = string
-  description = "Password must meet Azure complexity requirements"
+  description = "Password input for DATABASE / VIRTUAL_MACHINE"
 }
 
 variable "my_ip" {
   type        = string
-  description = "ip user"
+  description = "Your public ip to grant access to vm from your local machine"
 }

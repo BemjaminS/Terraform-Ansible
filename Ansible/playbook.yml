@@ -1,0 +1,110 @@
+---
+
+- hosts: webserver
+  become: true
+  vars_files:
+  - /home/ubuntu/ansible/production_var.yml
+
+  tasks:
+  - include_vars: '{{VAR_FILE}}'
+
+  - name: update machine
+    become: yes
+    apt:
+      update_cache: yes
+
+  - name: upgrade machine
+    become: yes
+    apt:
+      upgrade: dist
+
+  - name: pull nodejs 14.x.x
+    shell: curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+    args:
+      warn: no
+
+  - name: install nodejs 14.x.x
+    become: yes
+    apt:
+      update_cache: yes
+      name: nodejs
+      state: present
+
+  - name: Create directory to Web-App
+    file:
+      path: Bootcamp-app
+      state: directory
+
+  - name: clone the app
+    git:
+      repo: https://github.com/BemjaminS/bootcamp-app-U.git
+      dest: /home/ubuntu/Bootcamp-app
+      update: yes
+      clone: yes
+      force: yes
+
+  - name: create .env file
+    copy:
+      dest: /home/ubuntu/Bootcamp-app/.env
+      content: |
+        PORT=8080
+        HOST=0.0.0.0
+        NODE_ENV={{ NODE_ENV }}
+        COOKIE_ENCRYPT_PWD={{ COOKIE_ENCRYPT }}
+        HOST_URL=http://{{ LOAD_BALANCER_IP/HOST_MACHINE }}:8080
+        #Okta configuration
+        OKTA_ORG_URL=https://{{ OKTA_URL }}
+        OKTA_CLIENT_ID={{ OKTA_ID }}
+        OKTA_CLIENT_SECRET={{ OKTA_SECRET }}
+        #PG
+        PGHOST={{ POSTGRES_HOST }}
+        PGUSERNAME={{ POSTGRES_USERNAME }}
+        PGDATABASE={{ POSTGRES_DATABASE }}
+        PGPASSWORD={{ POSTGRES_PASSWORD }}
+        PGPORT=5432
+        #Node Weight Tracker
+
+
+  - name: install npm
+    command: npm install
+    args:
+      chdir: /home/ubuntu/Bootcamp-app
+
+
+  - name: initialize db
+    command: npm run initdb
+    run_once: true
+    args:
+      chdir: /home/ubuntu/Bootcamp-app
+
+  - name: Delete old pm2 processes if exists
+    shell: pm2 delete index
+    ignore_errors: yes
+
+  - name: Delete old pm2 processes if exists
+    shell: pm2 delete index
+    ignore_errors: yes
+
+  - name: Install pm2
+    npm:
+      name: pm2
+      global: yes
+
+  - name: Start Application
+    shell: pm2 start src/index.js
+    args:
+      chdir:  /home/ubuntu/Bootcamp-app
+
+  - name: saving the state of pm2
+    shell: pm2 save
+    args:
+      chdir:  /home/ubuntu/Bootcamp-app
+
+  - name: starting the state of pm2
+    shell: pm2 startup && sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u {{MACHINE_MANE}} --hp /home/{{MACHINE_MANE}}
+    args:
+      chdir:  /home/ubuntu/Bootcamp-app
+
+  - name: reboot machine
+    become: yes
+    command: reboot
