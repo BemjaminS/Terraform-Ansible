@@ -74,7 +74,7 @@
 | <a name="input_location"></a> [location](#input\_location) | Region to build into | `string` | `"australia east"` | no |
 | <a name="input_my_ip"></a> [my\_ip](#input\_my\_ip) | Your public ip to grant access to vm from your local machine | `string` | n/a | yes |
 | <a name="input_postgres_user_name"></a> [postgres\_user\_name](#input\_postgres\_user\_name) | Postgres\_Username | `string` | `"postgres"` | no |
-| <a name="input_public_vm_size"></a> [public\_vm\_size](#input\_public\_vm\_size) | Vm-Size Config | `string` | `"Standard_B1s"` | no |
+| <a name="input_public_vm_size"></a> [public\_vm\_size](#input\_public\_vm\_size) | Vm-Size Config | `string` | `"Standard_B2s"` | no |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Resource group name | `string` | `"Terraform-Week-6"` | no |
 | <a name="input_vnet-cidr"></a> [vnet-cidr](#input\_vnet-cidr) | Vnet address space(CIDR) | `string` | `"10.0.0.0/16"` | no |
 
