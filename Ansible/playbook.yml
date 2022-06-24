@@ -81,10 +81,6 @@
     shell: pm2 delete index
     ignore_errors: yes
 
-  - name: Delete old pm2 processes if exists
-    shell: pm2 delete index
-    ignore_errors: yes
-
   - name: Install pm2
     npm:
       name: pm2
