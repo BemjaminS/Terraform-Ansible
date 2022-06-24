@@ -97,7 +97,7 @@
       chdir:  /home/ubuntu/Bootcamp-app
 
   - name: starting the state of pm2
-    shell: pm2 startup && sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u {{MACHINE_MANE}} --hp /home/{{MACHINE_MANE}}
+    shell: pm2 startup && sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u {{User_name}} --hp /home/{{User_name}}
     args:
       chdir:  /home/ubuntu/Bootcamp-app
 

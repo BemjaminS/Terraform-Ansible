@@ -17,7 +17,7 @@ LOAD_BALANCER_IP/HOST_MACHINE: x.x.x.x
 COOKIE_ENCRYPT: superAwesomePasswordStringThatIsAtLeast32CharactersLong!
 NODE_ENV: development
 
-MACHINE_MANE: <machine_name>
+User_name: </home/...>
 PATH: <your/path/to/git/repo/>
 
 
